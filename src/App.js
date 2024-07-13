@@ -1,25 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import AdminPanel from "./components/AdminPanel";
+import UserPanel from "./components/UserPanel";
 
-function App() {
+const App = () => {
+  const [isAdminView, setIsAdminView] = useState(true);
+
+  const toggleView = () => {
+    setIsAdminView(!isAdminView);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {isAdminView ? (
+          <AdminPanel toggleView={toggleView} />
+        ) : (
+          <UserPanel toggleView={toggleView} />
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default App;
