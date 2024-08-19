@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+const BASE_URL = "https://conference-mern-backend.vercel.app/";
+
+
 function AdminPanel({ toggleView }) {
   const [conferences, setConferences] = useState([]);
   const [registrations, setRegistrations] = useState([]);
@@ -15,19 +18,19 @@ function AdminPanel({ toggleView }) {
   }, []);
 
   const fetchConferences = async () => {
-    const response = await axios.get("http://localhost:5000/conferences");
+    const response = await axios.get(`${BASE_URL}/conferences`);
     setConferences(response.data);
   };
 
   const fetchRegistrations = async () => {
     const response = await axios.get(
-      "http://localhost:5000/admin/registrations"
+      `${BASE_URL}/admin/registrations`
     );
     setRegistrations(response.data);
   };
 
   const handleAddConference = async () => {
-    await axios.post("http://localhost:5000/admin/conference", {
+    await axios.post(`${BASE_URL}/admin/conference`, {
       name,
       date,
       schedule,
@@ -37,7 +40,7 @@ function AdminPanel({ toggleView }) {
 
   const handleEditConference = async () => {
     await axios.put(
-      `http://localhost:5000/admin/conference/${editingConference._id}`,
+      `${BASE_URL}/admin/conference/${editingConference._id}`,
       { name, date, schedule }
     );
     setEditingConference(null);
@@ -45,12 +48,12 @@ function AdminPanel({ toggleView }) {
   };
 
   const handleDeleteConference = async (id) => {
-    await axios.delete(`http://localhost:5000/admin/conference/${id}`);
+    await axios.delete(`${BASE_URL}/admin/conference/${id}`);
     fetchConferences();
   };
 
   const handleDeleteRegistration = async (id) => {
-    await axios.delete(`http://localhost:5000/admin/registration/${id}`);
+    await axios.delete(`${BASE_URL}/admin/registration/${id}`);
     fetchRegistrations();
   };
 

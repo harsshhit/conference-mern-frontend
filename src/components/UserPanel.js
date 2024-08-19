@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+const BASE_URL = "https://conference-mern-backend.vercel.app/";
+
 function UserPanel({ toggleView }) {
   const [conferences, setConferences] = useState([]);
   const [name, setName] = useState("");
@@ -14,7 +16,7 @@ function UserPanel({ toggleView }) {
   useEffect(() => {
     // Fetch conferences
     axios
-      .get("http://localhost:5000/conferences")
+      .get(`${BASE_URL}/conferences`)
       .then((response) => {
         console.log("Conferences:", response.data); // Debug log
         setConferences(response.data);
@@ -24,7 +26,7 @@ function UserPanel({ toggleView }) {
 
   const handleRegister = () => {
     axios
-      .post("http://localhost:5000/register", {
+      .post(`${BASE_URL}/register`, {
         name,
         email,
         conferenceId: registrationConferenceId,
@@ -41,7 +43,7 @@ function UserPanel({ toggleView }) {
 
   const handleFeedback = () => {
     axios
-      .post("http://localhost:5000/feedback", {
+      .post(`${BASE_URL}/feedback`, {
         conferenceId: feedbackConferenceId,
         feedback,
       })
