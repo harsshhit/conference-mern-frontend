@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const BASE_URL = "https://conference-mern-backend.vercel.app/";
+const BASE_URL = "https://conference-mern-backend.vercel.app";
 
 function UserPanel({ toggleView }) {
   const [conferences, setConferences] = useState([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [registrationConferenceId, setRegistrationConferenceId] = useState(""); // State for registration conference
-  const [feedbackConferenceId, setFeedbackConferenceId] = useState(""); // State for feedback conference
+  const [registrationConferenceId, setRegistrationConferenceId] = useState("");
+  const [feedbackConferenceId, setFeedbackConferenceId] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [registrationStatus, setRegistrationStatus] = useState(""); // State for registration status
-  const [feedbackStatus, setFeedbackStatus] = useState(""); // State for feedback status
+  const [registrationStatus, setRegistrationStatus] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState("");
 
   useEffect(() => {
-    // Fetch conferences
     axios
       .get(`${BASE_URL}/conferences`)
       .then((response) => {
-        console.log("Conferences:", response.data); // Debug log
+        console.log("Conferences:", response.data);
         setConferences(response.data);
       })
       .catch((error) => console.error("Error fetching conferences:", error));
@@ -34,6 +33,9 @@ function UserPanel({ toggleView }) {
       .then((response) => {
         console.log("Registration successful:", response.data);
         setRegistrationStatus("Registration successful!");
+        setName("");
+        setEmail("");
+        setRegistrationConferenceId("");
       })
       .catch((error) => {
         console.error("Error during registration:", error);
@@ -50,6 +52,8 @@ function UserPanel({ toggleView }) {
       .then((response) => {
         console.log("Feedback submitted:", response.data);
         setFeedbackStatus("Feedback submitted successfully!");
+        setFeedback("");
+        setFeedbackConferenceId("");
       })
       .catch((error) => {
         console.error("Error submitting feedback:", error);
@@ -103,11 +107,13 @@ function UserPanel({ toggleView }) {
             </select>
             <button
               onClick={handleRegister}
-              className={`w-full py-3 px-4 rounded-full shadow-2xl transform transition-transform duration-300 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 ${
+              className={`w-full py-3 px-4 rounded-full shadow-2xl transform transition-transform duration-300 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 text-white font-bold ${
                 registrationStatus === "Registration successful!"
                   ? "bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-700 hover:to-teal-700"
-                  : "bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900"
-              } text-white font-bold`}
+                  : registrationStatus
+                  ? "bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900"
+                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-700 hover:to-purple-700"
+              }`}
             >
               {registrationStatus || "Register"}
             </button>
@@ -137,10 +143,12 @@ function UserPanel({ toggleView }) {
             />
             <button
               onClick={handleFeedback}
-              className={`w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-full shadow-2xl transform hover:scale-110 transition-transform duration-300 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
+              className={`w-full py-3 px-4 rounded-full shadow-2xl transform transition-transform duration-300 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 text-white font-bold ${
                 feedbackStatus === "Feedback submitted successfully!"
                   ? "bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-700 hover:to-teal-700"
-                  : "bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900"
+                  : feedbackStatus
+                  ? "bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900"
+                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-700 hover:to-purple-700"
               }`}
             >
               {feedbackStatus || "Submit Feedback"}

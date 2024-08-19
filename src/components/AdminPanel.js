@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const BASE_URL = "https://conference-mern-backend.vercel.app/";
-
+const BASE_URL = "https://conference-mern-backend.vercel.app";
 
 function AdminPanel({ toggleView }) {
   const [conferences, setConferences] = useState([]);
@@ -11,6 +10,7 @@ function AdminPanel({ toggleView }) {
   const [date, setDate] = useState("");
   const [schedule, setSchedule] = useState("");
   const [editingConference, setEditingConference] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchConferences();
@@ -18,43 +18,77 @@ function AdminPanel({ toggleView }) {
   }, []);
 
   const fetchConferences = async () => {
-    const response = await axios.get(`${BASE_URL}/conferences`);
-    setConferences(response.data);
+    try {
+      const response = await axios.get(`${BASE_URL}/conferences`);
+      setConferences(response.data);
+    } catch (err) {
+      console.error("Error fetching conferences:", err);
+    }
   };
 
   const fetchRegistrations = async () => {
-    const response = await axios.get(
-      `${BASE_URL}/admin/registrations`
-    );
-    setRegistrations(response.data);
+    try {
+      const response = await axios.get(`${BASE_URL}/admin/registrations`);
+      setRegistrations(response.data);
+    } catch (err) {
+      console.error("Error fetching registrations:", err);
+    }
   };
 
   const handleAddConference = async () => {
-    await axios.post(`${BASE_URL}/admin/conference`, {
-      name,
-      date,
-      schedule,
-    });
-    fetchConferences();
+    if (!name || !date || !schedule) {
+      setError("All fields are required.");
+      return;
+    }
+
+    try {
+      await axios.post(`${BASE_URL}/admin/conference`, { name, date, schedule });
+      setName("");
+      setDate("");
+      setSchedule("");
+      fetchConferences();
+    } catch (err) {
+      console.error("Error adding conference:", err);
+    }
   };
 
   const handleEditConference = async () => {
-    await axios.put(
-      `${BASE_URL}/admin/conference/${editingConference._id}`,
-      { name, date, schedule }
-    );
-    setEditingConference(null);
-    fetchConferences();
+    if (!name || !date || !schedule) {
+      setError("All fields are required.");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${BASE_URL}/admin/conference/${editingConference._id}`,
+        { name, date, schedule }
+      );
+      setEditingConference(null);
+      setName("");
+      setDate("");
+      setSchedule("");
+      fetchConferences();
+    } catch (err) {
+      console.error("Error editing conference:", err);
+    }
   };
 
   const handleDeleteConference = async (id) => {
-    await axios.delete(`${BASE_URL}/admin/conference/${id}`);
-    fetchConferences();
+    try {
+      await axios.delete(`${BASE_URL}/admin/conference/${id}`);
+      fetchConferences();
+    } catch (err) {
+      console.error("Error deleting conference:", err);
+    }
   };
 
   const handleDeleteRegistration = async (id) => {
-    await axios.delete(`${BASE_URL}/admin/registration/${id}`);
-    fetchRegistrations();
+    try {
+      await axios.delete(`${BASE_URL}/admin/registration/${id}`);
+      fetchRegistrations();
+    } catch (err) {
+      console.error("Error deleting registration:", err);
+    }
   };
 
   return (
@@ -72,6 +106,7 @@ function AdminPanel({ toggleView }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
           <h2 className="text-3xl font-semibold mb-4">Manage Conferences</h2>
+          {error && <p className="text-red-500">{error}</p>}
           <div className="space-y-4 mb-6">
             <input
               type="text"
@@ -125,6 +160,7 @@ function AdminPanel({ toggleView }) {
                         setDate(conference.date);
                         setSchedule(conference.schedule);
                         setEditingConference(conference);
+                        setError("");
                       }}
                       className="bg-gradient-to-r from-gray-400 to-gray-600 hover:from-gray-600 hover:to-gray-800 text-white font-bold py-1 px-4 rounded-full shadow-xl transform hover:scale-110 transition-transform duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
                     >
@@ -141,7 +177,7 @@ function AdminPanel({ toggleView }) {
                 <div>
                   <h4 className="text-lg font-semibold">Feedbacks</h4>
                   <ul className="pl-4 list-disc text-sm text-gray-400">
-                    {conference.feedback.length > 0 ? (
+                    {conference.feedback && conference.feedback.length > 0 ? (
                       conference.feedback.map((feedback, index) => (
                         <li key={index}>{feedback}</li>
                       ))
