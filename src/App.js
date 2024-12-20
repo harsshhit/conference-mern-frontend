@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import UserPanel from "./components/UserPanel";
+import Footer from "./components/Footer";
 
 const App = () => {
   const [isAdminView, setIsAdminView] = useState(false); // UserPanel is shown by default
@@ -18,6 +19,7 @@ const App = () => {
           <UserPanel toggleView={toggleView} />
         )}
       </div>
+      <Footer/>
     </div>
   );
 };

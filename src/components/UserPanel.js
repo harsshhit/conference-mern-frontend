@@ -11,6 +11,7 @@ import {
   Layout,
   Filter,
 } from "lucide-react";
+import Footer from "./Footer";
 
 const UserPanel = ({ toggleView }) => {
   const [conferences, setConferences] = useState([]);
@@ -307,6 +308,7 @@ const UserPanel = ({ toggleView }) => {
           </div>
         </div>
       </div>
+      
 
       {/* Modals */}
       {activeModal === "register" && (
