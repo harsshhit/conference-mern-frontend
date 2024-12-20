@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Users,
+  Calendar,
+  LayoutDashboard,
+  ChevronRight,
+  Search,
+  Bell,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-const BASE_URL = "https://conference-mern-backend.vercel.app";
-
-function AdminPanel({ toggleView }) {
+const AdminPanel = ({ toggleView }) => {
   const [conferences, setConferences] = useState([]);
   const [registrations, setRegistrations] = useState([]);
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [schedule, setSchedule] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    date: "",
+    schedule: "",
+  });
   const [editingConference, setEditingConference] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("conferences");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const BASE_URL = "https://conference-mern-backend.vercel.app";
 
   useEffect(() => {
     fetchConferences();
@@ -18,215 +34,333 @@ function AdminPanel({ toggleView }) {
   }, []);
 
   const fetchConferences = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/conferences`);
-      setConferences(response.data);
+      const response = await fetch(`${BASE_URL}/conferences`);
+      const data = await response.json();
+      setConferences(data);
     } catch (err) {
-      console.error("Error fetching conferences:", err);
+      setError("Failed to fetch conferences");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchRegistrations = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/admin/registrations`);
-      setRegistrations(response.data);
+      const response = await fetch(`${BASE_URL}/admin/registrations`);
+      const data = await response.json();
+      setRegistrations(data);
     } catch (err) {
-      console.error("Error fetching registrations:", err);
+      setError("Failed to fetch registrations");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddConference = async () => {
-    if (!name || !date || !schedule) {
-      setError("All fields are required.");
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.date || !formData.schedule) {
+      setError("All fields are required");
       return;
     }
 
     try {
-      await axios.post(`${BASE_URL}/admin/conference`, { name, date, schedule });
-      setName("");
-      setDate("");
-      setSchedule("");
-      fetchConferences();
-    } catch (err) {
-      console.error("Error adding conference:", err);
-    }
-  };
+      if (editingConference) {
+        await fetch(`${BASE_URL}/admin/conference/${editingConference._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+      } else {
+        await fetch(`${BASE_URL}/admin/conference`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+      }
 
-  const handleEditConference = async () => {
-    if (!name || !date || !schedule) {
-      setError("All fields are required.");
-      return;
-    }
-
-    try {
-      await axios.put(
-        `${BASE_URL}/admin/conference/${editingConference._id}`,
-        { name, date, schedule }
-      );
+      setFormData({ name: "", date: "", schedule: "" });
       setEditingConference(null);
-      setName("");
-      setDate("");
-      setSchedule("");
       fetchConferences();
     } catch (err) {
-      console.error("Error editing conference:", err);
+      setError(
+        editingConference
+          ? "Failed to update conference"
+          : "Failed to add conference"
+      );
     }
   };
 
-  const handleDeleteConference = async (id) => {
+  const handleDelete = async (id, type) => {
     try {
-      await axios.delete(`${BASE_URL}/admin/conference/${id}`);
-      fetchConferences();
+      await fetch(`${BASE_URL}/admin/${type}/${id}`, { method: "DELETE" });
+      if (type === "conference") {
+        fetchConferences();
+      } else {
+        fetchRegistrations();
+      }
     } catch (err) {
-      console.error("Error deleting conference:", err);
+      setError(`Failed to delete ${type}`);
     }
   };
 
-  const handleDeleteRegistration = async (id) => {
-    try {
-      await axios.delete(`${BASE_URL}/admin/registration/${id}`);
-      fetchRegistrations();
-    } catch (err) {
-      console.error("Error deleting registration:", err);
-    }
-  };
+  const NavButton = ({ icon: Icon, label, active, onClick }) => (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+        active
+          ? "bg-indigo-600 text-white"
+          : "text-gray-400 hover:bg-indigo-600 hover:text-white"
+      }`}
+    >
+      <Icon size={20} className="mr-2" />
+      <span className="font-medium">{label}</span>
+    </motion.button>
+  );
+
+  const filteredConferences = conferences.filter((conference) =>
+    conference.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredRegistrations = registrations.filter((user) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-extrabold">Admin Panel</h1>
-        <button
-          onClick={toggleView}
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-6 rounded-full shadow-2xl transform hover:scale-110 transition-transform duration-300 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-        >
-          Go to User Panel
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <h2 className="text-3xl font-semibold mb-4">Manage Conferences</h2>
-          {error && <p className="text-red-500">{error}</p>}
-          <div className="space-y-4 mb-6">
-            <input
-              type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Schedule"
-              value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
-              className="w-full p-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex justify-end">
-              <button
-                onClick={
-                  editingConference ? handleEditConference : handleAddConference
-                }
-                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-700 hover:to-teal-700 text-white font-bold py-2 px-3 rounded-full shadow-md transform hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+    <div className="min-h-screen bg-gray-900 text-white w-[100vw]">
+      {/* Top Navbar */}
+      <nav className="bg-gray-800 border-b border-indigo-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-indigo-400">
+                Admin Panel
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-gray-700 text-white rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                />
+              </div> */}
+              {/* <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-all"
               >
-                {editingConference ? "Update Conference" : "Add Conference"}
-              </button>
+                <Bell size={20} />
+              </motion.button> */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleView}
+                className="bg-indigo-600 text-white rounded-full px-4 py-2 hover:bg-indigo-700 transition-all"
+              >
+                Switch to User Panel
+              </motion.button>
             </div>
           </div>
+        </div>
+      </nav>
 
-          <ul className="space-y-4">
-            {conferences.map((conference) => (
-              <li
-                key={conference._id}
-                className="p-4 bg-gray-800 rounded-lg shadow-md flex flex-col space-y-2"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-xl font-bold">{conference.name}</h3>
-                    <p className="text-sm text-gray-400">{conference.date}</p>
-                    <p className="text-sm">{conference.schedule}</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        setName(conference.name);
-                        setDate(conference.date);
-                        setSchedule(conference.schedule);
-                        setEditingConference(conference);
-                        setError("");
-                      }}
-                      className="bg-gradient-to-r from-gray-400 to-gray-600 hover:from-gray-600 hover:to-gray-800 text-white font-bold py-1 px-4 rounded-full shadow-xl transform hover:scale-110 transition-transform duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConference(conference._id)}
-                      className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900 text-white font-bold py-1 px-4 rounded-full shadow-xl transform hover:scale-110 transition-transform duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-lg font-semibold">Feedbacks</h4>
-                  <ul className="pl-4 list-disc text-sm text-gray-400">
-                    {conference.feedback && conference.feedback.length > 0 ? (
-                      conference.feedback.map((feedback, index) => (
-                        <li key={index}>{feedback}</li>
-                      ))
-                    ) : (
-                      <li>No feedback available</li>
-                    )}
-                  </ul>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-red-500 bg-opacity-10 border border-red-500 text-red-500 rounded-lg"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        <div className="flex justify-center space-x-4 mb-8">
+          <NavButton
+            icon={LayoutDashboard}
+            label="Conferences"
+            active={activeTab === "conferences"}
+            onClick={() => setActiveTab("conferences")}
+          />
+          <NavButton
+            icon={Users}
+            label="Registrations"
+            active={activeTab === "registrations"}
+            onClick={() => setActiveTab("registrations")}
+          />
         </div>
 
-        <div>
-          <h2 className="text-3xl font-semibold mb-4">Registrations</h2>
-          <ul className="space-y-4">
-            {registrations.map((user) => (
-              <li
-                key={user._id}
-                className="p-4 bg-gray-800 rounded-lg shadow-md mb-4 flex justify-between items-center"
-              >
-                <div>
-                  <h3 className="font-bold text-lg">{user.name}</h3>
-                  <p className="text-sm text-gray-400">{user.email}</p>
-                  <ul className="pl-4 list-disc text-sm text-gray-400">
-                    {user.conferences.map((conference) => (
-                      <li key={conference._id}>
-                        {conference.name} - {conference.date}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <button
-                  onClick={() => handleDeleteRegistration(user._id)}
-                  className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900 text-white font-bold py-1 px-4 rounded-full shadow-xl transform hover:scale-110 transition-transform duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                >
-                  <img
-                    src="/assets/delete.png"
-                    alt="delete"
-                    className="h-6 w-6"
+        {activeTab === "conferences" ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+          >
+            {/* Add/Edit Conference Form */}
+            <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-bold text-indigo-400 mb-4">
+                {editingConference ? "Edit Conference" : "Add New Conference"}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Conference Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="bg-gray-700 text-white rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
                   />
-                </button>
-              </li>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    className="bg-gray-700 text-white rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
+                  />
+                  <input
+                    type="text"
+                    name="schedule"
+                    placeholder="Schedule"
+                    value={formData.schedule}
+                    onChange={handleInputChange}
+                    className="bg-gray-700 text-white rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    className="flex items-center bg-indigo-600 text-white rounded-full px-6 py-2 hover:bg-indigo-700 transition-all"
+                  >
+                    <Plus size={20} className="mr-2" />
+                    {editingConference ? "Update Conference" : "Add Conference"}
+                  </motion.button>
+                </div>
+              </form>
+            </div>
+
+            {/* Conferences Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredConferences.map((conference) => (
+                <motion.div
+                  key={conference._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-indigo-400">
+                      {conference.name}
+                    </h3>
+                    <div className="flex space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                          setFormData({
+                            name: conference.name,
+                            date: conference.date,
+                            schedule: conference.schedule,
+                          });
+                          setEditingConference(conference);
+                        }}
+                        className="p-2 hover:bg-gray-700 rounded-full transition-all"
+                      >
+                        <Edit2 size={16} className="text-indigo-400" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() =>
+                          handleDelete(conference._id, "conference")
+                        }
+                        className="p-2 hover:bg-gray-700 rounded-full transition-all text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </motion.button>
+                    </div>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-400 mb-2">
+                    <Calendar size={16} className="mr-2 text-indigo-400" />
+                    {conference.date}
+                  </div>
+                  <p className="text-gray-300 mb-4">{conference.schedule}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          /* Registrations Grid */
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          >
+            {filteredRegistrations.map((user) => (
+              <motion.div
+                key={user._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold text-indigo-400">
+                    {user.name}
+                  </h3>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleDelete(user._id, "registration")}
+                    className="p-2 hover:bg-gray-700 rounded-full transition-all text-red-500"
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+                </div>
+                <p className="text-sm text-gray-400 mb-3">{user.email}</p>
+                <h4 className="text-sm font-semibold text-indigo-400 mb-2">
+                  Registered Conferences
+                </h4>
+                <div className="space-y-2">
+                  {user.conferences.map((conf) => (
+                    <div
+                      key={conf._id}
+                      className="flex items-center text-sm text-gray-500"
+                    >
+                      <Calendar size={14} className="mr-2 text-indigo-400" />
+                      {conf.name} - {conf.date}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             ))}
-          </ul>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </main>
     </div>
   );
-}
+};
 
 export default AdminPanel;
