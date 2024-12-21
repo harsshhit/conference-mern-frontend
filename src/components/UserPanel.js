@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Calendar,
   Send,
@@ -10,17 +10,16 @@ import {
   X,
   Layout,
   Filter,
+  Sparkles,
 } from "lucide-react";
-import Footer from "./Footer";
 
 const UserPanel = ({ toggleView }) => {
   const [conferences, setConferences] = useState([]);
   const [filteredConferences, setFilteredConferences] = useState([]);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
-  // const [isNavOpen, setIsNavOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
-  const [dateFilter, setDateFilter] = useState("all"); // new state for date filter
+  const [dateFilter, setDateFilter] = useState("all");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -30,15 +29,7 @@ const UserPanel = ({ toggleView }) => {
 
   const BASE_URL = "https://conference-mern-backend.vercel.app";
 
-  useEffect(() => {
-    fetchConferences();
-  }, []);
-
-  useEffect(() => {
-    filterConferences();
-  }, [dateFilter, conferences]);
-
-  const filterConferences = () => {
+  const filterConferences = useCallback(() => {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     const nextMonth = new Date(
@@ -63,7 +54,15 @@ const UserPanel = ({ toggleView }) => {
     });
 
     setFilteredConferences(filtered);
-  };
+  }, [dateFilter, conferences]);
+
+  useEffect(() => {
+    fetchConferences();
+  }, []);
+
+  useEffect(() => {
+    filterConferences();
+  }, [dateFilter, conferences, filterConferences]);
 
   const fetchConferences = async () => {
     setLoading(true);
@@ -142,9 +141,16 @@ const UserPanel = ({ toggleView }) => {
     }
   };
 
+  const openModal = (type, conferenceId) => {
+    setFormData({ ...formData, conferenceId });
+    setActiveModal(type);
+    setStatus({ type: "", message: "" });
+  };
+
   const Modal = ({ children, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md relative border border-gray-700">
+    <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-2xl pointer-events-none" />
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white"
@@ -156,87 +162,80 @@ const UserPanel = ({ toggleView }) => {
     </div>
   );
 
-  const openModal = (type, conferenceId) => {
-    setFormData({ ...formData, conferenceId });
-    setActiveModal(type);
-    setStatus({ type: "", message: "" });
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 w-[100vw]">
-      {/* Navbar */}
-      <nav className="bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center space-x-2 sm:space-x-3 group">
-              <Layout className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-400 group-hover:text-indigo-300 transition-colors duration-200" />
-              <span className="text-white text-base sm:text-lg font-extrabold tracking-tight">
-                <span className=" xs:inline">Conference</span>
-                <span className="text-indigo-400 ml-0 sm:ml-1">Portal</span>
-              </span>
+      {/* Futuristic Navbar */}
+      <nav className="relative bg-gray-900 border-b border-indigo-500/30">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center space-x-3 group">
+              <Layout className="w-8 h-8 text-indigo-400 group-hover:text-indigo-300 transition-all duration-300" />
+              <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                Conference Portal
+              </div>
             </div>
-
-            <div className="flex items-center">
-              <button
-                onClick={toggleView}
-                className="relative inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full
-                     bg-indigo-600 text-white font-medium text-xs sm:text-sm
-                     transform transition-all duration-200
-                     hover:bg-indigo-500 hover:scale-105 hover:shadow-lg
-                     focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-gray-900"
-              >
-                {/* <Menu className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" /> */}
-                <span className=" xs:inline">Admin Panel</span>
-                {/* <span className="xs:hidden">Admin</span> */}
-              </button>
-            </div>
+            <button
+              onClick={toggleView}
+              className="px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium
+                       hover:from-indigo-500 hover:to-purple-500 transition-all duration-300
+                       shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50
+                       border border-indigo-500/30"
+            >
+              Admin Panel
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden h-[40vh] md:h-[40vh] w-full">
+      <div className="relative h-[50vh] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/50 to-gray-900 z-10" />
         <div className="absolute inset-0">
-          <img
-            src="https://th.bing.com/th/id/OIP.sp4QQHucVD4zf4ckf-L-GAHaC9?w=1600&h=640&rs=1&pid=ImgDetMain"
-            alt="Conference"
-            className="w-full h-full object-cover bg-black  opacity-30"
-          />
+          <div className="absolute inset-0 bg-[url('https://plus.unsplash.com/premium_photo-1679547202671-f9dbbf466db4?q=80&w=1932&auto=format&fit=crop')] bg-cover bg-center opacity-30" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 h-full flex items-center">
-          <div className="text-center md:text-left">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              Welcome to Conference Portal
+        <div className="relative z-20 max-w-7xl mx-auto px-4 h-full flex items-center">
+          <div className="space-y-6">
+            <h1 className="text-5xl md:text-7xl font-bold">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                Future of
+              </span>
+              <br />
+              <span className="text-white">Conferences</span>
             </h1>
-            <p className="text-xl text-gray-300">
-              Join amazing conferences and share your experience
+            <p className="text-xl text-gray-300 max-w-2xl">
+              Experience next-generation conferences where innovation meets
+              collaboration. Join us in shaping the future of professional
+              gatherings.
             </p>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        {/* Status Message */}
         {status.message && (
           <div
-            className={`mb-6 p-4 rounded-lg ${
+            className={`mb-8 p-4 rounded-2xl backdrop-blur-sm border 
+            ${
               status.type === "success"
-                ? "bg-green-900 border border-green-700 text-green-100"
-                : "bg-red-900 border border-red-700 text-red-100"
+                ? "bg-green-500/10 border-green-500/30 text-green-400"
+                : "bg-red-500/10 border-red-500/30 text-red-400"
             }`}
           >
             {status.message}
           </div>
         )}
 
-        {/* Date Filter */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="flex items-center bg-gray-800 rounded-lg p-2">
-            <Filter className="text-indigo-400 mr-2" size={20} />
+        {/* Filter Section */}
+        <div className="flex flex-wrap items-center gap-4 mb-8">
+          <div className="flex items-center bg-gray-800/50 rounded-full p-2 border border-indigo-500/30 backdrop-blur-sm">
+            <Filter className="text-indigo-400 mx-2" size={20} />
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+              className="bg-transparent text-white border-none focus:ring-0 rounded-full pr-8"
             >
               <option value="all">All Conferences</option>
               <option value="week">This Week</option>
@@ -244,71 +243,73 @@ const UserPanel = ({ toggleView }) => {
               <option value="future">Future Events</option>
             </select>
           </div>
-          <span className="text-gray-400">
-            Showing {filteredConferences.length} conferences
+          <span className="text-gray-400 flex items-center">
+            <Sparkles size={16} className="mr-2 text-indigo-400" />
+            {filteredConferences.length} conferences available
           </span>
         </div>
 
         {/* Conferences Grid */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-            <Calendar className="mr-2 text-indigo-400" />
-            Upcoming Conferences
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredConferences.map((conference) => (
-              <div
-                key={conference._id}
-                className="bg-gray-800 rounded-lg overflow-hidden shadow-xl border border-gray-700"
-              >
-                <div className="relative h-48">
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-90" />
-                  <div className="absolute bottom-0 left-0 p-4">
-                    <h3 className="text-3xl font-semibold text-white mb-2">
-                      {conference.name}
-                    </h3>
-                    <div className="flex items-center text-gray-300">
-                      <Calendar size={16} className="mr-2" />
-                      {conference.date}
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredConferences.map((conference) => (
+            <div
+              key={conference._id}
+              className="group relative bg-gray-800/50 rounded-2xl overflow-hidden border border-indigo-500/30 backdrop-blur-sm
+                          hover:border-indigo-500/50 transition-all duration-300
+                          hover:shadow-lg hover:shadow-indigo-500/20"
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/90" />
+              <div className="relative p-6">
+                <h3 className="text-4xl font-bold text-white mb-4">
+                  {conference.name}
+                </h3>
+
+                <div className="space-y-3">
+                  <div className="flex items-center text-gray-300">
+                    <Calendar size={16} className="mr-2 text-indigo-400" />
+                    {conference.date}
                   </div>
-                </div>
-                <div className="p-4 space-y-3">
                   <div className="flex items-center text-gray-300">
                     <MapPin size={16} className="mr-2 text-indigo-400" />
-                    <span>{conference.location || "Virtual"}</span>
+                    {conference.location || "Virtual"}
                   </div>
                   <div className="flex items-center text-gray-300">
                     <Users size={16} className="mr-2 text-indigo-400" />
-                    <span>{conference.attendees || "Limited spots"}</span>
+                    {conference.attendees || "Limited spots"}
                   </div>
                   <div className="flex items-center text-gray-300">
                     <Clock size={16} className="mr-2 text-indigo-400" />
-                    <span>{conference.schedule}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <button
-                      onClick={() => openModal("feedback", conference._id)}
-                      className="flex items-center justify-center p-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full transition-all"
-                    >
-                      <MessageSquare size={16} className="mr-2" />
-                      Feedback
-                    </button>
-                    <button
-                      onClick={() => openModal("register", conference._id)}
-                      className="flex items-center justify-center p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full transition-all"
-                    >
-                      <UserPlus size={16} className="mr-2" />
-                      Register
-                    </button>
+                    {conference.schedule}
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <button
+                    onClick={() => openModal("feedback", conference._id)}
+                    className="flex items-center justify-center px-4 py-2 rounded-full
+                             bg-cyan-600/20 hover:bg-cyan-600 text-cyan-400 hover:text-white
+                             border border-cyan-500/30 hover:border-cyan-500
+                             transition-all duration-300"
+                  >
+                    <MessageSquare size={16} className="mr-2" />
+                    Feedback
+                  </button>
+                  <button
+                    onClick={() => openModal("register", conference._id)}
+                    className="flex items-center justify-center px-4 py-2 rounded-full
+                             bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white
+                             border border-indigo-500/30 hover:border-indigo-500
+                             transition-all duration-300"
+                  >
+                    <UserPlus size={16} className="mr-2" />
+                    Register
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
-      
 
       {/* Modals */}
       {activeModal === "register" && (
@@ -324,7 +325,10 @@ const UserPanel = ({ toggleView }) => {
               placeholder="Your Name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-gray-400"
+              className="w-full p-3 bg-gray-800/50 text-white rounded-lg 
+                       border border-indigo-500/30 focus:border-indigo-500/50
+                       focus:ring-2 focus:ring-indigo-500/20 focus:outline-none
+                       placeholder-gray-400"
             />
             <input
               type="email"
@@ -332,11 +336,17 @@ const UserPanel = ({ toggleView }) => {
               placeholder="Your Email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-gray-400"
+              className="w-full p-3 bg-gray-800/50 text-white rounded-lg 
+                       border border-indigo-500/30 focus:border-indigo-500/50
+                       focus:ring-2 focus:ring-indigo-500/20 focus:outline-none
+                       placeholder-gray-400"
             />
             <button
               type="submit"
-              className="w-full flex items-center justify-center p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all"
+              className="w-full flex items-center justify-center p-3
+                       bg-gradient-to-r from-indigo-600 to-purple-600
+                       hover:from-indigo-500 hover:to-purple-500
+                       text-white rounded-lg transition-all duration-300"
             >
               <UserPlus size={20} className="mr-2" />
               Register Now
@@ -358,11 +368,17 @@ const UserPanel = ({ toggleView }) => {
               value={formData.feedback}
               onChange={handleInputChange}
               rows="4"
-              className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none placeholder-gray-400"
+              className="w-full p-3 bg-gray-800/50 text-white rounded-lg 
+                       border border-indigo-500/30 focus:border-indigo-500/50
+                       focus:ring-2 focus:ring-indigo-500/20 focus:outline-none
+                       resize-none placeholder-gray-400"
             />
             <button
               type="submit"
-              className="w-full flex items-center justify-center p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all"
+              className="w-full flex items-center justify-center p-3
+                       bg-gradient-to-r from-indigo-600 to-purple-600
+                       hover:from-indigo-500 hover:to-purple-500
+                       text-white rounded-lg transition-all duration-300"
             >
               <Send size={20} className="mr-2" />
               Submit Feedback
